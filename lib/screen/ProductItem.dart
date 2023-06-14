@@ -82,10 +82,8 @@ class _ProductItemState extends State<ProductItem> {
               arguments: data.id,
             );
           },
-          child: Image.network(
-            data.image,
-            fit: BoxFit.cover,
-          ),
+          child: Hero(tag: data.id,child: FadeInImage(placeholder: AssetImage('assets/images/product-placeholder.png'), image: NetworkImage( data.image),fit: BoxFit.cover,))
+          
         ),
       ),
     );

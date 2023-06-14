@@ -84,7 +84,8 @@ class AuthCard extends StatefulWidget {
   State<AuthCard> createState() => _AuthCardState();
 }
 
-class _AuthCardState extends State<AuthCard> {
+class _AuthCardState extends State<AuthCard>
+    with SingleTickerProviderStateMixin {
   final _form = GlobalKey<FormState>();
   AuthMode _authMode = AuthMode.login;
   Map<String, dynamic> _authData = {
@@ -94,6 +95,36 @@ class _AuthCardState extends State<AuthCard> {
 
   bool _isLodaing = false;
   final _passwordController = TextEditingController();
+  AnimationController? _controller;
+  // Animation<Size>? _heightAnimation;
+  Animation<double>? _opacity;
+  Animation<Offset>? _offset;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    // _heightAnimation = Tween(
+    //         begin: Size(double.infinity, 280), end: Size(double.infinity, 330))
+    //     .animate(
+    //         CurvedAnimation(parent: _controller!, curve: Curves.easeInOutBack));
+    _opacity = Tween(begin: 0.0, end: 1.1).animate(_controller!);
+    _offset = Tween<Offset>(begin: Offset(0.0, -1.5), end: Offset(0.0, 0.0))
+        .animate(_controller!);
+
+    // _heightAnimation!.addListener(() {
+    //   setState(() {});
+    // });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _controller!.dispose();
+  }
 
   void _showDialogError(String message) {
     showDialog(
@@ -153,10 +184,12 @@ class _AuthCardState extends State<AuthCard> {
       setState(() {
         _authMode = AuthMode.signUp;
       });
+      _controller!.forward();
     } else {
       setState(() {
         _authMode = AuthMode.login;
       });
+      _controller!.reverse();
     }
   }
 
@@ -168,62 +201,73 @@ class _AuthCardState extends State<AuthCard> {
         borderRadius: BorderRadius.circular(10.0),
       ),
       elevation: 8.0,
-      child: SingleChildScrollView(
-        child: Container(
-          height: _authMode == AuthMode.signUp ? 330 : 280,
-          constraints: BoxConstraints(
-              minHeight: _authMode == AuthMode.signUp ? 330 : 280),
-          width: deviceSize.width * 0.85,
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _form,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOutBack,
+        height: _authMode == AuthMode.signUp ? 330 : 270,
+        // height: _heightAnimation!.value.height,
+        constraints:
+            BoxConstraints(minHeight: _authMode == AuthMode.signUp ? 330 : 270),
+        // minHeight: _heightAnimation!.value.height),
+        width: deviceSize.width * 0.85,
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _form,
+          child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Expanded(
-                child: TextFormField(
-                  decoration: const InputDecoration(labelText: "E-mail"),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value!.isEmpty || !value.contains('@')) {
-                      return 'Invalid Email';
-                    }
-                    return null;
-                  },
-                  onSaved: (newValue) {
-                    _authData['email'] = newValue;
-                  },
-                ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: "E-mail"),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value!.isEmpty || !value.contains('@')) {
+                    return 'Invalid Email';
+                  }
+                  return null;
+                },
+                onSaved: (newValue) {
+                  _authData['email'] = newValue;
+                },
               ),
-              Expanded(
-                child: TextFormField(
-                  decoration: const InputDecoration(labelText: "Password"),
-                  obscureText: true,
-                  controller: _passwordController,
-                  validator: (value) {
-                    if (value!.isEmpty || value.length < 5) {
-                      return 'Password is to short';
-                    }
-                    return null;
-                  },
-                  onSaved: (newValue) {
-                    _authData['password'] = newValue;
-                  },
-                ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+                controller: _passwordController,
+                validator: (value) {
+                  if (value!.isEmpty || value.length < 5) {
+                    return 'Password is to short';
+                  }
+                  return null;
+                },
+                onSaved: (newValue) {
+                  _authData['password'] = newValue;
+                },
               ),
-              if (_authMode == AuthMode.signUp)
-                Expanded(
-                  child: TextFormField(
-                    decoration: InputDecoration(labelText: "Confirm Password"),
-                    enabled: _authMode == AuthMode.signUp,
-                    obscureText: true,
-                    validator: _authMode == AuthMode.signUp
-                        ? (value) {
-                            if (value != _passwordController.text) {
-                              return "Passwords do not match";
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeIn,
+                constraints: BoxConstraints(
+                  minHeight: _authMode == AuthMode.signUp ? 60 : 0,
+                  maxHeight: _authMode == AuthMode.signUp ? 120 : 0,
+                ),
+                child: FadeTransition(
+                  opacity: _opacity!,
+                  child: SlideTransition(
+                    position: _offset!,
+                    child: TextFormField(
+                      decoration: InputDecoration(labelText: "Confirm Password"),
+                      enabled: _authMode == AuthMode.signUp,
+                      obscureText: true,
+                      validator: _authMode == AuthMode.signUp
+                          ? (value) {
+                              if (value != _passwordController.text) {
+                                return "Passwords do not match";
+                              }
                             }
-                          }
-                        : null,
+                          : null,
+                    ),
                   ),
                 ),
+              ),
               const SizedBox(
                 height: 20,
               ),
@@ -241,6 +285,9 @@ class _AuthCardState extends State<AuthCard> {
                     onPressed: _submitData,
                     child: Text(
                         _authMode == AuthMode.login ? 'LOGIN' : "SIGN UP")),
+              const SizedBox(
+                height: 10,
+              ),
               TextButton(
                 style: ElevatedButton.styleFrom(
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,

@@ -53,9 +53,10 @@ class Products with ChangeNotifier {
     return _item.where((element) => element.isFavorite).toList();
   }
 
-  Future<void> getProduct(BuildContext context) async {
+  Future<void> getProduct([bool filterByUser = false]) async {
+    final filteruser = filterByUser ? 'orderBy="creatorId"&equalTo="$userId"' : '';
     var url =
-        "https://flutter-shop-d4349-default-rtdb.firebaseio.com/products.json?auth=$token";
+        'https://flutter-shop-d4349-default-rtdb.firebaseio.com/products.json?auth=$token&$filteruser';
     try {
       final response = await http.get(Uri.parse(url));
       var data = json.decode(response.body) as Map<String, dynamic>;
@@ -92,6 +93,7 @@ class Products with ChangeNotifier {
             'title': product.title,
             'price': product.price,
             'image': product.image,
+            'creatorId':userId,
           }));
 
       final newProduct = Product(

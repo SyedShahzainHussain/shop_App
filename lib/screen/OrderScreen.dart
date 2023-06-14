@@ -54,9 +54,13 @@ class _OrderScreenState extends State<OrderScreen> {
                       ),
                     ),
                   ));
+            } else if (snapshot.connectionState == ConnectionState.none) {
+              return Center(
+                child: Text("No Orders Found"),
+              );
             } else if (snapshot.error != null) {
               return Center(
-                child: Text('Error Occured'),
+                child: Text('No Orders Found'),
               );
             } else {
               return ListView.builder(

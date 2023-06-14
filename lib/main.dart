@@ -13,6 +13,8 @@ import "package:flutter_application_1/screen/UserProductScreen.dart";
 import "package:provider/provider.dart";
 import "./screen/OverviewScreen.dart";
 import "Provider/Cart.dart";
+import "helpers/custom_routes.dart";
+import "screen/SplashScreen.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,35 +31,46 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-          ChangeNotifierProvider(
+        ChangeNotifierProvider(
           create: (context) => Auth(),
         ),
         ChangeNotifierProxyProvider<Auth, Products>(
-          create: (ctx) => Products("", [],""),
-      
-          update: (context, value, previous) =>
-              Products(value.token!, previous == null ? [] : previous.items,value.userId),
+          create: (ctx) => Products('', [], ""),
+          update: (context, value, previous) => Products(value.token ?? '',
+              previous == null ? [] : previous.items, value.userId),
         ),
         ChangeNotifierProvider(
           create: (context) => Cart(),
         ),
         ChangeNotifierProxyProvider<Auth, OrderItem>(
-             create: (ctx) => OrderItem("", []),
-      
-          update: (context, value, previous) =>
-              OrderItem(value.token!, previous == null ? [] : previous.order),
+          create: (ctx) => OrderItem('', [], ''),
+          update: (context, value, previous) => OrderItem(value.token ?? '',
+              previous == null ? [] : previous.order, value.userId),
         ),
-      
       ],
       child: Consumer<Auth>(
         builder: (context, auth, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'Flutter Demo',
+            
             theme: ThemeData(
               primarySwatch: Colors.blue,
+              pageTransitionsTheme: PageTransitionsTheme(builders: {
+                TargetPlatform.android:PageTransition(),
+                TargetPlatform.iOS: PageTransition(),
+              })
             ),
-            home: auth.isAuth ? OverviewScreen() : AuthScreen(),
+            
+            home: auth.isAuth
+                ? OverviewScreen()
+                : FutureBuilder(
+                    future: auth.tryAutoLogin(),
+                    builder: (ctx, snapshot) =>
+                        snapshot.connectionState == ConnectionState.waiting
+                            ? SplashScreen()
+                            : AuthScreen(),
+                            ),
             routes: {
               DetailScreen.routeName: (context) => DetailScreen(),
               CartScreen.routeName: (context) => CartScreen(),

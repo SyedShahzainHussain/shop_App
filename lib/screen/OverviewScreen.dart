@@ -39,7 +39,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   void didChangeDependencies() {
     if (_isint) {
-      Provider.of<Products>(context).getProduct(context).then((_) {
+      Provider.of<Products>(context).getProduct().then((_) {
         setState(() {
           _isLoading = false;
         });
